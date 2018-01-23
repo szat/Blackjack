@@ -1,0 +1,164 @@
+#https://blog.udemy.com/blackjack-rules-2/
+
+import math
+import random
+
+class Deck:
+    nb_cards = 4*13
+    cards = [4,4,4,4,4,4,4,4,4,4,4,4,4]
+
+    def __init__(self, nb_players):
+        nb_decks = math.ceil(nb_players/3)
+        another_deck = [4,4,4,4,4,4,4,4,4,4,4,4,4]
+        Deck.nb_cards = nb_decks*13*4
+        Deck.cards = [x * nb_decks for x in another_deck]
+
+    def getDeckSize(self):
+        return Deck.nb_cards
+
+    def getDeckArray(self):
+        return Deck.cards
+
+    def drawCard(self):
+        if(Deck.nb_cards< 1):
+            return -1
+        else:
+            c = random.randrange(0,Deck.nb_cards)
+            for index, x in enumerate(Deck.cards):
+                c -= x
+                if(c < 0):
+                    c = index
+                    break
+            Deck.cards[c] -= 1
+            Deck.nb_cards -= 1
+            return c
+
+class Hand:
+    values = [1,2,3,4,5,6,7,8,9,10,1,2,3,11]
+
+    def __init__(self):
+        self.last_card = -1 #index of the last card
+        self.cards = [0,0,0,0,0,0,0,0,0,0,0,0,0] #the actual hand
+        self.scores = [0] #in case of one or multiple aces
+         
+    def getLastCard(self):
+        return self.last_card
+
+    def getScores(self):
+        return self.scores
+
+    def getCards(self):
+        return self.cards
+
+    def addCard(self,card):
+        self.last_card = card
+        self.cards[card] += 1
+        if(self.last_card != 0): #not an ace
+            val = Hand.values[self.last_card]
+            self.scores = [x + val for x in self.scores]
+        else: #last card is an ace
+            temp1 = self.scores
+            temp2 = self.scores 
+            temp1 = [x + 1 for x in temp1]
+            temp2 = [x + 11 for x in temp2]
+            self.scores = list(set().union(temp1,temp2))
+
+            
+class Dealer: 
+    def __init__(self):
+        h = Hand()
+        self.hand = h
+
+    def addCard(self, card):
+        self.hand.addCard(card)
+    
+    def thinkHit(self):
+        hand_val = min(self.hand.scores)
+        if(hand_val <= 16):
+            return 1
+        else:
+            return 0
+    
+class Player:
+    values = [1,2,3,4,5,6,7,8,9,10,1,2,3,11]
+    
+    def __init__(self):
+        h = Hand()
+        self.current_hand_idx = 0
+        self.hands = [h]
+        self.bets = [0]
+
+    def getCurrentHand(self):
+        return self.current_hand_idx
+
+    def getHands(self):
+        return self.hands
+
+    def getBets(self):
+        return self.bets
+    
+    def addCard(self, card):
+        self.hands[self.current_hand_idx].addCard(card)
+    
+    def thinkHit(self,deck_array):
+        cards_remaining = sum(deck_array)
+        if(cards_remaining < 1):
+            return 0
+        else:
+            scores = self.hands[self.current_hand_idx].getScores()
+            diff = [21 - x for x in scores]
+            diff = max(diff)
+            if diff < 1:
+                return 0
+            else:
+                cummulative = 0
+                last_card = self.hands[self.current_hand_idx].getLastCard()
+                for index, x in enumerate(deck_array):
+                    if(Player.values[index] < diff or index == last_card):
+                        cummulative += x
+                return cummulative / cards_remaining
+    
+    def thinkSplit(self, new_card):
+        current_hand = self.hands[self.current_hand_idx]
+        last_card = current_hand.last_card
+        if(last_card != new_card):
+            return 0
+        else:
+            temp = current_hand
+            temp.addCard(new_card)
+            min_score = min(temp.getScores())
+            if(min_score > 21):
+                return 1
+            if(new_card == 1):
+                return 1
+            if(min_score > 19):
+                return 0
+            if(new_card == 8):
+                return 1
+            else: 
+                return 0
+
+    def splitHand(self, new_card):
+        new_hand = Hand()
+        new_hand.addCard(new_card)
+        self.hands.insert(self.current_hand_idx+1, new_hand)
+        self.bets.insert(self.current_hand_idx+1, 0)
+        self.current_hand_idx += 1
+
+deck = Deck(4)
+dealer = Dealer()
+c = deck.drawCard()
+
+print(c)
+print("Number of Cards: ",deck.getDeckSize())
+print(deck.cards)
+
+dealer.addCard(c)
+dealer.addCard(c)
+
+print(dealer.hand.cards)
+print(dealer.hand.last_card)
+print(dealer.hand.scores)
+
+
+
